@@ -1,29 +1,85 @@
 import { apiClient } from "./client";
-import type { ResearchSession, ResearchJob } from "@/types";
+import type { ResearchSession, ResearchJob, ApiResponse } from "@/types";
 
 export const researchApi = {
-  getSessions: async () => {
-    const response = await apiClient.get("research/sessions").json<any>();
-    return Array.isArray(response)
-      ? response
-      : response.data || response.sessions || [];
+  getSessions: async (): Promise<ResearchSession[]> => {
+    try {
+      const response = await apiClient
+        .get("research/sessions")
+        .json<ApiResponse<{ sessions: ResearchSession[] }>>();
+
+      if (response.success && response.data?.sessions) {
+        return response.data.sessions;
+      }
+      return [];
+    } catch {
+      return [];
+    }
   },
 
-  createSession: (data: {
+  createSession: async (data: {
     title: string;
     description?: string;
     provider: string;
-  }) =>
-    apiClient.post("research/sessions", { json: data }).json<ResearchSession>(),
+  }) => {
+    const response = await apiClient
+      .post("research/sessions", { json: data })
+      .json<ApiResponse<ResearchSession>>();
 
-  getSession: (id: number) =>
-    apiClient.get(`research/sessions/${id}`).json<ResearchSession>(),
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(
+      !response.success && response.error
+        ? response.error.message
+        : "Failed to create session",
+    );
+  },
 
-  submitQuery: (sessionId: number, query: string, provider: string) =>
-    apiClient
+  getSession: async (id: number) => {
+    const response = await apiClient
+      .get(`research/sessions/${id}`)
+      .json<ApiResponse<ResearchSession>>();
+
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(
+      !response.success && response.error
+        ? response.error.message
+        : "Failed to fetch session",
+    );
+  },
+
+  submitQuery: async (sessionId: number, query: string, provider: string) => {
+    const response = await apiClient
       .post("research/query", { json: { sessionId, query, provider } })
-      .json<{ jobId: string; sessionId: number; status: string }>(),
+      .json<
+        ApiResponse<{ jobId: string; sessionId: number; status: string }>
+      >();
 
-  getJob: (jobId: string) =>
-    apiClient.get(`research/jobs/${jobId}`).json<ResearchJob>(),
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(
+      !response.success && response.error
+        ? response.error.message
+        : "Failed to submit query",
+    );
+  },
+
+  getJob: async (jobId: string) => {
+    const response = await apiClient
+      .get(`research/jobs/${jobId}`)
+      .json<ApiResponse<ResearchJob>>();
+
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(
+      !response.success && response.error
+        ? response.error.message
+        : "Failed to fetch job",
+    );
+  },
 };

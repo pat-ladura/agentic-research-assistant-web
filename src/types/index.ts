@@ -10,6 +10,29 @@ export interface AuthResponse {
   user: User;
 }
 
+// Standard API Response Envelope
+export interface ApiSuccessResponse<T = any> {
+  success: true;
+  data: T;
+  message?: string;
+}
+
+export interface ZodIssue {
+  path: (string | number)[];
+  message: string;
+}
+
+export interface ApiErrorResponse {
+  success: false;
+  error: {
+    code: 'VALIDATION_ERROR' | 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND' | 'CONFLICT' | 'INTERNAL_ERROR' | 'SERVICE_UNAVAILABLE';
+    message: string;
+    details?: ZodIssue[];
+  };
+}
+
+export type ApiResponse<T = any> = ApiSuccessResponse<T> | ApiErrorResponse;
+
 export interface ResearchSession {
   id: number;
   userId: number;
