@@ -21,12 +21,12 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await authApi.login(email, password);
-      if (res.error) {
-        setError(res.error);
-      } else if (res.data) {
-        console.log('Login successful:', res.data);
+      if (!res.success && res.error) {
+        // Display the error message from API response
+        setError(res.error.message);
+      } else if (res.success && res.data) {
         setAuth(res.data.token, res.data.user);
-        // navigate('/dashboard');
+        navigate('/dashboard');
       }
     } catch {
       setError('An unexpected error occurred');

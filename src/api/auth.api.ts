@@ -1,30 +1,83 @@
 import { apiClient } from "./client";
-import type { AuthResponse } from "@/types";
+import type { AuthResponse, ApiResponse } from "@/types";
+
+export interface LoginResult {
+  success: boolean;
+  data?: AuthResponse;
+  error?: {
+    code: string;
+    message: string;
+    details?: any[];
+  };
+}
 
 export const authApi = {
-  login: async (
-    email: string,
-    password: string,
-  ): Promise<{ data?: AuthResponse; error?: string }> => {
+  login: async (email: string, password: string): Promise<LoginResult> => {
     try {
       const response = await apiClient
         .post("auth/login", { json: { email, password } })
-        .json<AuthResponse>();
-      return { data: response };
+        .json<ApiResponse<AuthResponse>>();
+
+      if (response.success && response.data) {
+        return {
+          success: true,
+          data: response.data,
+        };
+      } else if (!response.success && response.error) {
+        return {
+          success: false,
+          error: response.error,
+        };
+      }
+
+      return {
+        success: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Unexpected response format",
+        },
+      };
     } catch (error: any) {
-      const errorMessage =
-        error?.response?.statusText || error?.message || "Login failed";
-      return { error: errorMessage };
+      return {
+        success: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: error?.message || "An unexpected error occurred",
+        },
+      };
     }
   },
 
   logout: async () => {
     try {
-      return await apiClient.post("auth/logout").json<{ message: string }>();
+      const response = await apiClient
+        .post("auth/logout")
+        .json<ApiResponse<null>>();
+
+      if (response.success) {
+        return { success: true };
+      } else if (!response.success && response.error) {
+        return {
+          success: false,
+          error: response.error,
+        };
+      }
+
+      return {
+        success: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Unexpected response format",
+        },
+      };
     } catch (error: any) {
-      const errorMessage =
-        error?.response?.statusText || error?.message || "Logout failed";
-      return { error: errorMessage };
+      return {
+        success: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: error?.message || "An unexpected error occurred",
+        },
+      };
     }
   },
 };
